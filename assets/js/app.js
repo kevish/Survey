@@ -46,9 +46,9 @@ var mapquestOSM = L.tileLayer("http://{s}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.
   subdomains: ["otile1", "otile2", "otile3", "otile4"],
   attribution: 'Tiles courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">. Map data (c) <a href="http://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> contributors, CC-BY-SA.'
 });
-var mapquestOAM = L.tileLayer("http://{s}.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg", {
+var mapquestOAM = L.tileLayer("http://{s}.tile.stamen.com/terrain/{z}/{x}/{y}.png", {
   maxZoom: 18,
-  subdomains: ["oatile1", "oatile2", "oatile3", "oatile4"],
+  subdomains: 'abcd',
   attribution: 'Tiles courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a>. Portions Courtesy NASA/JPL-Caltech and U.S. Depart. of Agriculture, Farm Service Agency'
 });
 var mapquestHYB = L.layerGroup([L.tileLayer("http://{s}.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg", {
@@ -65,7 +65,7 @@ var boroughs = L.geoJson(null, {
   style: function (feature) {
     return {
       color: "black",
-      fillColor: "#b94141",
+      fillColor: "#e24b50",
       opacity:.95,
       weight: 1.2,
       clickable: false
@@ -82,6 +82,28 @@ var boroughs = L.geoJson(null, {
 });
 $.getJSON("data/boroughs.geojson", function (data) {
   boroughs.addData(data);
+});
+var activityareas = L.geoJson(null, {
+    style: function (feature) {
+        return {
+            color: "black",
+            fillColor: "#a1a1a1",
+            opacity:.95,
+            weight: 1.5,
+            clickable: false
+        };
+    },
+    onEachFeature: function (feature, layer) {
+        boroughSearch.push({
+            name: layer.feature.properties.BoroName,
+            source: "ActivityAreas",
+            id: L.stamp(layer),
+            bounds: layer.getBounds()
+        });
+    }
+});
+$.getJSON("http://134.29.9.153/apiv1/provenience/surface_collections/?format=json", function (data) {
+    activityareas.addData(data);
 });
 
 var subwayLines = L.geoJson(null, {
@@ -219,8 +241,8 @@ var theaters = L.geoJson(null, {
     return L.marker(latlng, {
       icon: L.icon({
         iconUrl: "assets/img/theater.png",
-        iconSize: [24, 28],
-        iconAnchor: [12, 28],
+        iconSize: [5, 5],
+        iconAnchor: [0, 0],
         popupAnchor: [0, -25]
       }),
       title: feature.properties.NAME,
@@ -257,7 +279,7 @@ var theaters = L.geoJson(null, {
     }
   }
 });
-$.getJSON("data/DOITT_THEATER_01_13SEPT2010.geojson", function (data) {
+$.getJSON("http://134.29.9.153/apiv1/provenience/shovel_tests/?format=json", function (data) {
   theaters.addData(data);
   map.addLayer(theaterLayer);
 });
@@ -313,7 +335,7 @@ $.getJSON("data/DOITT_MUSEUM_01_13SEPT2010.geojson", function (data) {
 map = L.map("map", {
   zoom: 10,
   center: [40.702222, -73.979378],
-  layers: [mapquestOSM, boroughs, markerClusters],
+  layers: [mapquestOAM, boroughs, markerClusters, activityareas],
   zoomControl: false,
   attributionControl: false
 });
@@ -394,19 +416,20 @@ var locateControl = L.control.locate({
 }).addTo(map);
 
 var baseLayers = {
+  "Stamen Terrain": mapquestOAM,
   "Street Map": mapquestOSM,
-  "Aerial Imagery": mapquestOAM,
   "Imagery with Streets": mapquestHYB
 };
 
 var groupedOverlays = {
   "Points of Interest": {
-    "<img src='assets/img/theater.png' width='24' height='28'>&nbsp;Theaters": theaterLayer,
+    "<img src='assets/img/theater.png' width='20' height='22'>&nbsp;Shovel Tests": theaterLayer,
     "<img src='assets/img/museum.png' width='24' height='28'>&nbsp;Artifacts": museumLayer
   },
   "Reference": {
-    "Boroughs": boroughs,
-    "Subway Lines": subwayLines
+    "Sites": boroughs,
+    "Test": subwayLines,
+    "Activity Areas": activityareas,
   }
 };
 
