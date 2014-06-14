@@ -102,7 +102,7 @@ var activityareas = L.geoJson(null, {
         });
     }
 });
-$.getJSON("http://134.29.9.153/apiv1/provenience/surface_collections/?format=json", function (data) {
+$.getJSON("data/actA.geojson", function (data) {
     activityareas.addData(data);
 });
 
@@ -429,7 +429,7 @@ var groupedOverlays = {
   "Reference": {
     "Sites": boroughs,
     "Test": subwayLines,
-    "Activity Areas": activityareas,
+    "Activity Areas": activityareas
   }
 };
 
