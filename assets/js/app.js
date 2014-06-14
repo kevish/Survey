@@ -39,12 +39,28 @@ function sidebarClick(lat, lng, id, layer) {
   }
   map._layers[id].fire("click");
 }
+function highlightFeature(e) {
+    var layer = e.target;
+
+    layer.setStyle({
+        weight: 5,
+        color: '#666',
+        dashArray: '',
+        fillOpacity: 0.7
+    });
+}
+function resetHighlight(e) {
+    geojson.resetStyle(e.target);
+}
+function onEachFeature(feature, layer) {
+    layer.on({
+        mouseover:highlightFeature,
+        mouseout: resetHighlight
+    });
+}
 
 /* Basemap Layers */
-var mapquestOSM = L.tileLayer("http://{s}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png", {
-  maxZoom: 19,
-  subdomains: ["otile1", "otile2", "otile3", "otile4"],
-  attribution: 'Tiles courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">. Map data (c) <a href="http://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> contributors, CC-BY-SA.'
+var mapquestOSM = L.tileLayer('http://{s}.tiles.mapbox.com/v3/brownish.hfnl6fnc/{z}/{x}/{y}.png', {
 });
 var mapquestOAM = L.tileLayer("http://{s}.tile.stamen.com/terrain/{z}/{x}/{y}.png", {
   maxZoom: 18,
@@ -65,44 +81,96 @@ var boroughs = L.geoJson(null, {
   style: function (feature) {
     return {
       color: "black",
-      fillColor: "#e24b50",
-      opacity:.95,
+      fillColor: "#ab070d",
+      fillOpacity:.5,
+      opacity: 2,
       weight: 1.2,
-      clickable: false
     };
   },
   onEachFeature: function (feature, layer) {
+        layer.on({
+            mouseover: function (e) {
+                var layer = e.target;
+                layer.setStyle({
+                    weight: 3,
+                    fillOpacity:.8,
+                    opacity: 1
+                });
+            },
+            mouseout: function (e) {
+                boroughs.resetStyle(e.target);
+            }
+        }).bindLabel(feature.properties.NAME);
+  /*onEachFeature: function (feature, layer) {
     boroughSearch.push({
       name: layer.feature.properties.BoroName,
       source: "Boroughs",
       id: L.stamp(layer),
       bounds: layer.getBounds()
-    });
+    });*/
   }
 });
 $.getJSON("data/boroughs.geojson", function (data) {
   boroughs.addData(data);
 });
-var activityareas = L.geoJson(null, {
+
+var surfacecollection = L.geoJson(null, {
     style: function (feature) {
         return {
-            color: "black",
-            fillColor: "#a1a1a1",
+            color: "blue",
+            fillColor: "#afc4ee",
             opacity:.95,
-            weight: 1.5,
+            fillOpacity:.5,
+            weight:.8,
             clickable: false
         };
     },
     onEachFeature: function (feature, layer) {
         boroughSearch.push({
             name: layer.feature.properties.BoroName,
-            source: "ActivityAreas",
+            source: "Surface Collections",
             id: L.stamp(layer),
             bounds: layer.getBounds()
         });
     }
 });
-$.getJSON("http://134.29.9.153/apiv1/provenience/surface_collections/?format=json", function (data) {
+$.getJSON("http://134.29.9.153/apiv1/surface_collections/?format=json", function (data) {
+    surfacecollection.addData(data);
+});
+
+var activityareas = L.geoJson(null, {
+    style: function (feature) {
+        return {
+            color: "black",
+            fillColor: "#a1a1a1",
+            fillOpacity:.4,
+            opacity:.95,
+            weight: 2
+        };
+    },
+    onEachFeature: function (feature, layer) {
+        layer.on({
+            mouseover: function (e) {
+                var layer = e.target;
+                layer.setStyle({
+                    weight: 3,
+                    fillOpacity:.9,
+                    opacity: 1
+                });
+            },
+            mouseout: function (e) {
+                activityareas.resetStyle(e.target);
+            }
+        }).bindLabel(feature.properties.name);
+        /*boroughSearch.push({
+            name: layer.feature.properties.BoroName,
+            source: "ActivityAreas",
+            id: L.stamp(layer),
+            bounds: layer.getBounds()
+        });*/
+    }
+});
+$.getJSON("http://134.29.9.153/apiv1/activity_areas/?format=json", function (data) {
     activityareas.addData(data);
 });
 
@@ -204,23 +272,23 @@ var subwayLines = L.geoJson(null, {
         });
       }
     }
-    layer.on({
-      mouseover: function (e) {
-        var layer = e.target;
-        layer.setStyle({
-          weight: 3,
-          color: "#00FFFF",
-          opacity: 1
+      layer.on({
+          mouseover: function (e) {
+              var layer = e.target;
+              layer.setStyle({
+                  weight: 3,
+                  color: "#00FFFF",
+                  opacity: 1
         });
         if (!L.Browser.ie && !L.Browser.opera) {
           layer.bringToFront();
         }
       },
-      mouseout: function (e) {
+            mouseout: function (e) {
         subwayLines.resetStyle(e.target);
       }
-    });
-  }
+        });
+    }
 });
 $.getJSON("data/subways.geojson", function (data) {
   subwayLines.addData(data);
@@ -243,15 +311,15 @@ var theaters = L.geoJson(null, {
         iconUrl: "assets/img/theater.png",
         iconSize: [5, 5],
         iconAnchor: [0, 0],
-        popupAnchor: [0, -25]
+        popupAnchor: [0, -25],
       }),
       title: feature.properties.NAME,
       riseOnHover: true
-    });
+    }).bindLabel(feature.properties.grid);
   },
   onEachFeature: function (feature, layer) {
     if (feature.properties) {
-      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>Name</th><td>" + feature.properties.NAME + "</td></tr>" + "<tr><th>Phone</th><td>" + feature.properties.TEL + "</td></tr>" + "<tr><th>Address</th><td>" + feature.properties.ADDRESS1 + "</td></tr>" + "<tr><th>Website</th><td><a class='url-break' href='" + feature.properties.URL + "' target='_blank'>" + feature.properties.URL + "</a></td></tr>" + "<table>";
+      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>Name</th><td>" + feature.properties.name + "</td></tr>" + "<tr><th>Grid</th><td>" + feature.properties.grid + "</td></tr>" + "<tr><th>Address</th><td>" + feature.properties.ADDRESS1 + "</td></tr>" + "<tr><th>Website</th><td><a class='url-break' href='" + feature.properties.URL + "' target='_blank'>" + feature.properties.URL + "</a></td></tr>" + "<table>";
 
       if (document.body.clientWidth <= 767) {
         layer.on({
@@ -279,7 +347,7 @@ var theaters = L.geoJson(null, {
     }
   }
 });
-$.getJSON("http://134.29.9.153/apiv1/provenience/shovel_tests/?format=json", function (data) {
+$.getJSON("http://134.29.9.153/apiv1/shovel_tests/?format=json", function (data) {
   theaters.addData(data);
   map.addLayer(theaterLayer);
 });
@@ -417,7 +485,7 @@ var locateControl = L.control.locate({
 
 var baseLayers = {
   "Stamen Terrain": mapquestOAM,
-  "Street Map": mapquestOSM,
+  "MapBox Satellite": mapquestOSM,
   "Imagery with Streets": mapquestHYB
 };
 
@@ -430,6 +498,7 @@ var groupedOverlays = {
     "Sites": boroughs,
     "Test": subwayLines,
     "Activity Areas": activityareas,
+    "Surface Collections": surfacecollection
   }
 };
 
