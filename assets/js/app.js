@@ -63,7 +63,7 @@ function onEachFeature(feature, layer) {
 var mapquestOSM = L.tileLayer('http://{s}.tiles.mapbox.com/v3/brownish.hfnl6fnc/{z}/{x}/{y}.png', {
 });
 var mapquestOAM = L.tileLayer("http://{s}.tile.stamen.com/terrain/{z}/{x}/{y}.png", {
-  maxZoom: 18,
+  maxZoom: 20,
   subdomains: 'abcd',
   attribution: 'Tiles courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a>. Portions Courtesy NASA/JPL-Caltech and U.S. Depart. of Agriculture, Farm Service Agency'
 });
@@ -77,42 +77,6 @@ var mapquestHYB = L.layerGroup([L.tileLayer("http://{s}.mqcdn.com/tiles/1.0.0/sa
 })]);
 
 /* Overlay Layers */
-var boroughs = L.geoJson(null, {
-  style: function (feature) {
-    return {
-      color: "black",
-      fillColor: "#ab070d",
-      fillOpacity:.5,
-      opacity: 2,
-      weight: 1.2,
-    };
-  },
-  onEachFeature: function (feature, layer) {
-        layer.on({
-            mouseover: function (e) {
-                var layer = e.target;
-                layer.setStyle({
-                    weight: 3,
-                    fillOpacity:.8,
-                    opacity: 1
-                });
-            },
-            mouseout: function (e) {
-                boroughs.resetStyle(e.target);
-            }
-        }).bindLabel(feature.properties.NAME);
-  /*onEachFeature: function (feature, layer) {
-    boroughSearch.push({
-      name: layer.feature.properties.BoroName,
-      source: "Boroughs",
-      id: L.stamp(layer),
-      bounds: layer.getBounds()
-    });*/
-  }
-});
-$.getJSON("data/boroughs.geojson", function (data) {
-  boroughs.addData(data);
-});
 
 var surfacecollection = L.geoJson(null, {
     style: function (feature) {
@@ -134,7 +98,7 @@ var surfacecollection = L.geoJson(null, {
         });
     }
 });
-$.getJSON("http://134.29.9.153/apiv1/surface_collections/?format=json", function (data) {
+$.getJSON("data/surfacecollection.geojson", function (data) {
     surfacecollection.addData(data);
 });
 
@@ -160,18 +124,173 @@ var activityareas = L.geoJson(null, {
             },
             mouseout: function (e) {
                 activityareas.resetStyle(e.target);
+            },
+            click: function (e) {
+                window.open('file:///C:/projects/bootleaf-master/bootleaf-master/Completed_Surveys-2014-06-16/Completed%20Surveys/' + feature.properties.name + '.pdf');
             }
         }).bindLabel(feature.properties.name);
         /*boroughSearch.push({
-            name: layer.feature.properties.BoroName,
-            source: "ActivityAreas",
-            id: L.stamp(layer),
-            bounds: layer.getBounds()
-        });*/
+         name: layer.feature.properties.BoroName,
+         source: "ActivityAreas",
+         id: L.stamp(layer),
+         bounds: layer.getBounds()
+         });*/
     }
 });
-$.getJSON("http://134.29.9.153/apiv1/activity_areas/?format=json", function (data) {
+$.getJSON("data/actA.geojson", function (data) {
     activityareas.addData(data);
+});
+
+var boroughs = L.geoJson(null, {
+    style: function (feature) {
+        return {
+            color: "black",
+            fillColor: "#ab070d",
+            fillOpacity:.5,
+            opacity: 2,
+            weight: 1.2
+        };
+    },
+    onEachFeature: function (feature, layer) {
+        layer.on({
+            mouseover: function (e) {
+                var layer = e.target;
+                layer.setStyle({
+                    weight: 3,
+                    fillOpacity:.8,
+                    opacity: 1
+                });
+            },
+            mouseout: function (e) {
+                boroughs.resetStyle(e.target);
+            },
+            click: function (e) {
+                window.open('file:///C:/projects/bootleaf-master/bootleaf-master/Completed_Surveys-2014-06-16/Completed%20Surveys/' + feature.properties.NAME + '.html');
+            }
+        }).bindLabel(feature.properties.NAME);
+        /*onEachFeature: function (feature, layer) {
+         boroughSearch.push({
+         name: layer.feature.properties.BoroName,
+         source: "Boroughs",
+         id: L.stamp(layer),
+         bounds: layer.getBounds()
+         });*/
+    }
+});
+$.getJSON("data/boroughs.geojson", function (data) {
+    boroughs.addData(data);
+});
+
+var negshoveltests = L.geoJson(null, {
+    style: function (feature) {
+        return {
+            color: "black",
+            fillColor: "#dedede",
+            opacity: 1,
+            fillOpacity:.77,
+            weight: 1,
+            clickable: true
+        };
+    },
+    onEachFeature: function (feature, layer) {
+        if (feature.properties) {
+            var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>Grid</th><td>" + feature.properties.grid + "</td></tr>" + "<tr><th>Local X,Y</th><td>" + feature.properties.local_x + " " + feature.properties.local_y + "</td></tr>" + "<tr><th># of Artifacts</th><td>" + feature.properties.artifacts + "</td></tr>" + "<tr><th>Material</th><td>" + feature.properties.lithic_raw + "</td></tr>" + "<table>";
+            if (document.body.clientWidth <= 767) {
+                layer.on({
+                    mouseover: function (e) {
+                        var layer = e.target;
+                        layer.setStyle({
+                            weight: 2,
+                            fillOpacity: 1,
+                            opacity: 1
+                        });
+                    },
+                    mouseout: function (e) {
+                        boroughs.resetStyle(e.target);
+                    },
+                    click: function (e) {
+                        $("#feature-title").html(feature.properties.NAME);
+                        $("#feature-info").html(content);
+                        $("#featureModal").modal("show");
+                    }
+                }).bindLabel(feature.properties.grid);
+            } else {
+                layer.bindPopup(content, {
+                    maxWidth: "auto",
+                    closeButton: false
+                });
+            }
+            $("#museum-table tbody").append('<tr><td class="museum-name">'+layer.feature.properties.NAME+'</td><td class="museum-address"><a href="#" onclick="sidebarClick('+layer.feature.geometry.coordinates[1]+', '+layer.feature.geometry.coordinates[0]+', '+L.stamp(layer)+', museumLayer); return false;">'+layer.feature.properties.lithic_raw+'</a></td></tr>');
+            museumSearch.push({
+                name: layer.feature.properties.NAME,
+                address: layer.feature.properties.ADRESS1,
+                source: "Artifacts",
+                id: L.stamp(layer),
+                lat: layer.feature.geometry.coordinates[1],
+                lng: layer.feature.geometry.coordinates[0]
+            });
+        }
+    }
+
+});
+$.getJSON("data/NegST.geojson", function (data) {
+    negshoveltests.addData(data);
+});
+
+var posshoveltests = L.geoJson(null, {
+    style: function (feature) {
+        return {
+            color: "black",
+            fillColor: "#3d9952",
+            opacity: 1,
+            fillOpacity:.77,
+            weight: 2,
+            clickable: true
+        };
+    },
+    onEachFeature: function (feature, layer) {
+        if (feature.properties) {
+            var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>Grid</th><td>" + feature.properties.grid + "</td></tr>" + "<tr><th>Local X,Y</th><td>" + feature.properties.local_x + " " + feature.properties.local_y + "</td></tr>" + "<tr><th># of Artifacts</th><td>" + feature.properties.artifacts + "</td></tr>" + "<tr><th>Material</th><td>" + feature.properties.lithic_raw + "</td></tr>" + "<table>";
+            if (document.body.clientWidth <= 767) {
+                layer.on({
+                    mouseover: function (e) {
+                        var layer = e.target;
+                        layer.setStyle({
+                            weight: 3,
+                            fillOpacity: 1,
+                            opacity: 1
+                        });
+                    },
+                    mouseout: function (e) {
+                        boroughs.resetStyle(e.target);
+                    },
+                    click: function (e) {
+                        $("#feature-title").html(feature.properties.NAME);
+                        $("#feature-info").html(content);
+                        $("#featureModal").modal("show");
+                    }
+                }).bindLabel(feature.properties.grid);
+            } else {
+                layer.bindPopup(content, {
+                    maxWidth: "auto",
+                    closeButton: false
+                });
+            }
+            $("#museum-table tbody").append('<tr><td class="museum-name">'+layer.feature.properties.NAME+'</td><td class="museum-address"><a href="#" onclick="sidebarClick('+layer.feature.geometry.coordinates[1]+', '+layer.feature.geometry.coordinates[0]+', '+L.stamp(layer)+', museumLayer); return false;">'+layer.feature.properties.lithic_raw+'</a></td></tr>');
+            museumSearch.push({
+                name: layer.feature.properties.NAME,
+                address: layer.feature.properties.ADRESS1,
+                source: "Artifacts",
+                id: L.stamp(layer),
+                lat: layer.feature.geometry.coordinates[1],
+                lng: layer.feature.geometry.coordinates[0]
+            });
+        }
+    }
+
+});
+$.getJSON("data/PosST.geojson", function (data) {
+    posshoveltests.addData(data);
 });
 
 var subwayLines = L.geoJson(null, {
@@ -310,8 +429,8 @@ var theaters = L.geoJson(null, {
       icon: L.icon({
         iconUrl: "assets/img/theater.png",
         iconSize: [5, 5],
-        iconAnchor: [0, 0],
-        popupAnchor: [0, -25],
+        iconAnchor: [10, 10],
+        popupAnchor: [10, -25]
       }),
       title: feature.properties.NAME,
       riseOnHover: true
@@ -347,7 +466,7 @@ var theaters = L.geoJson(null, {
     }
   }
 });
-$.getJSON("http://134.29.9.153/apiv1/shovel_tests/?format=json", function (data) {
+$.getJSON("null.geojson", function (data) {
   theaters.addData(data);
   map.addLayer(theaterLayer);
 });
@@ -359,17 +478,17 @@ var museums = L.geoJson(null, {
     return L.marker(latlng, {
       icon: L.icon({
         iconUrl: "assets/img/museum.png",
-        iconSize: [24, 28],
-        iconAnchor: [12, 28],
-        popupAnchor: [0, -25]
+        iconSize: [10, 10],
+        iconAnchor: [8, 8],
+        popupAnchor: [0, 0]
       }),
-      title: feature.properties.NAME,
+      title: feature.properties.artifact,
       riseOnHover: true
     });
   },
   onEachFeature: function (feature, layer) {
     if (feature.properties) {
-      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>Name</th><td>" + feature.properties.NAME + "</td></tr>" + "<tr><th>Class</th><td>" + feature.properties.artifact_c + "</td></tr>" + "<tr><th>Type</th><td>" + feature.properties.lithic_typ + "</td></tr>" + "<tr><th>Material</th><td>" + feature.properties.lithic_raw + "</td></tr>" + "<table>";
+      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>ID</th><td>" + feature.properties.artifact + "</td></tr>" + "<tr><th>Provenience</th><td>" + feature.properties.provenienc + "</td></tr>" + "<tr><th>Type</th><td>" + feature.properties.artifact_c + "</td></tr>" + "<tr><th>Material</th><td>" + feature.properties.lithic_raw + "</td></tr>" + "<table>";
       if (document.body.clientWidth <= 767) {
         layer.on({
           click: function (e) {
@@ -396,14 +515,14 @@ var museums = L.geoJson(null, {
     }
   }
 });
-$.getJSON("data/DOITT_MUSEUM_01_13SEPT2010.geojson", function (data) {
+$.getJSON("data/artifacts.geojson", function (data) {
   museums.addData(data);
 });
 
 map = L.map("map", {
   zoom: 10,
   center: [40.702222, -73.979378],
-  layers: [mapquestOAM, boroughs, markerClusters, activityareas],
+  layers: [mapquestOAM, boroughs, markerClusters, activityareas, surfacecollection, posshoveltests, negshoveltests],
   zoomControl: false,
   attributionControl: false
 });
@@ -491,14 +610,16 @@ var baseLayers = {
 
 var groupedOverlays = {
   "Points of Interest": {
-    "<img src='assets/img/theater.png' width='20' height='22'>&nbsp;Shovel Tests": theaterLayer,
-    "<img src='assets/img/museum.png' width='24' height='28'>&nbsp;Artifacts": museumLayer
+    "<img src='assets/img/theater.png' width='10' height='10'>&nbsp;Shovel Tests": theaterLayer,
+    "<img src='assets/img/museum.png' width='10' height='10'>&nbsp;Artifacts": museumLayer
   },
   "Reference": {
     "Sites": boroughs,
     "Test": subwayLines,
     "Activity Areas": activityareas,
-    "Surface Collections": surfacecollection
+    "Surface Collections": surfacecollection,
+    "Positive Shovel Tests": posshoveltests,
+    "Negative Shovel Tests": negshoveltests
   }
 };
 
